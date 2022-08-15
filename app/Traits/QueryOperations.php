@@ -2,8 +2,10 @@
 
 namespace App\Traits;
 
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 trait QueryOperations
 {
@@ -15,16 +17,28 @@ trait QueryOperations
 
     public function scopePrepare(Builder $builder, Request $request): Builder
     {
-        if (($orderBy = $request->order_by) && count($orderBy) === 2) {
-            [$key, $value] = $orderBy;
+        try {
+            [$key, $value] = $request->order_by;
 
             $builder->orderBy($key, $value);
+        } catch (Exception $exception) {
+            Log::error($exception->getMessage());
         }
 
         if ($request->with_deleted) {
-            $builder->withTrashed();
+            try {
+                $builder->withTrashed();
+            } catch (Exception $exception) {
+                Log::error($exception->getMessage());
+            }
         }
 
-        return $builder->with($request->with ?? []);
+        try {
+            $builder->with($request->with ?? []);
+        } catch (Exception $exception) {
+            Log::error($exception->getMessage());
+        }
+
+        return $builder;
     }
 }
